@@ -1,5 +1,7 @@
 # Sistema de Controle de Aeroporto ✈️
 
+![Language: Java](https://img.shields.io/badge/Language-Java-red?style=for-the-badge&logo=java&logoColor=white)
+
 Um aeroporto deseja desenvolver um sistema de controle que gerencie **voos e passageiros**.  
 
 O sistema permite:  
