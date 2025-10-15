@@ -29,7 +29,8 @@ class Voo {
     List<Passageiro> confirmados = new ArrayList<>();
     Stack<Passageiro> checkIn = new Stack<>();
 
-    public Voo(String numeroVoo, String origem, String destino, String horaPartida, String horaChegada, int capacidadeMaxima) {
+    public Voo(String numeroVoo, String origem, String destino, String horaPartida, String horaChegada,
+            int capacidadeMaxima) {
         this.numeroVoo = numeroVoo;
         this.origem = origem;
         this.destino = destino;
@@ -229,7 +230,8 @@ public class SistemaAeroportoGUI extends JFrame {
         panel.add(new JLabel("Email:"));
         panel.add(email);
 
-        int result = JOptionPane.showConfirmDialog(this, panel, "Cadastro de Passageiro: " + nome, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        int result = JOptionPane.showConfirmDialog(this, panel, "Cadastro de Passageiro: " + nome,
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
             try {
                 int i = Integer.parseInt(idade.getText().trim());
@@ -266,7 +268,8 @@ public class SistemaAeroportoGUI extends JFrame {
         panel.add(new JLabel("Capacidade máxima:"));
         panel.add(capacidade);
 
-        int result = JOptionPane.showConfirmDialog(this, panel, "Cadastrar Voo", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        int result = JOptionPane.showConfirmDialog(this, panel, "Cadastrar Voo", JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
             try {
                 String num = numero.getText().trim();
@@ -284,42 +287,70 @@ public class SistemaAeroportoGUI extends JFrame {
     }
 
     private void reservarVoo() {
-        if (voos.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Nenhum voo cadastrado.");
-            return;
-        }
-        StringBuilder sb = new StringBuilder("Voos disponíveis:\n");
-        for (Voo v : voos) {
-            if (v.temVagas()) sb.append(v.numeroVoo).append(" - ").append(v.origem).append(" → ").append(v.destino).append("\n");
-        }
-        String num = JOptionPane.showInputDialog(this, sb + "\nDigite o número do voo:");
-        if (num == null || num.isBlank()) return;
-        Voo voo = voos.stream().filter(v -> v.numeroVoo.equals(num)).findFirst().orElse(null);
-        if (voo == null || !voo.temVagas()) {
-            JOptionPane.showMessageDialog(this, "Voo inválido ou lotado.");
-            return;
-        }
-
-        String nome = JOptionPane.showInputDialog("Digite seu nome (como cadastrado):");
-        if (nome == null || nome.isBlank()) return;
-        Optional<Passageiro> p = passageiros.stream().filter(pass -> pass.nome.equalsIgnoreCase(nome)).findFirst();
-        if (p.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Passageiro não cadastrado!");
-            return;
-        }
-
-        voo.reservasPendentes.add(p.get());
-        JOptionPane.showMessageDialog(this, "Reserva realizada! Aguarde confirmação do administrador.");
+    if (voos.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Nenhum voo cadastrado.");
+        return;
     }
+
+    StringBuilder sb = new StringBuilder("Voos disponíveis:\n");
+    for (Voo v : voos) {
+        sb.append(v.numeroVoo)
+          .append(" - ")
+          .append(v.origem)
+          .append(" → ")
+          .append(v.destino)
+          .append(" | Capacidade: ").append(v.capacidadeMaxima)
+          .append(" | Confirmados: ").append(v.confirmados.size())
+          .append(" | Pendentes: ").append(v.reservasPendentes.size())
+          .append("\n");
+    }
+
+    String num = JOptionPane.showInputDialog(this, sb + "\nDigite o número do voo para reservar:");
+    if (num == null || num.isBlank()) return;
+
+    Voo voo = voos.stream().filter(v -> v.numeroVoo.equals(num)).findFirst().orElse(null);
+    if (voo == null) {
+        JOptionPane.showMessageDialog(this, "Voo não encontrado!");
+        return;
+    }
+
+    String nome = JOptionPane.showInputDialog("Digite seu nome (como cadastrado):");
+    if (nome == null || nome.isBlank()) return;
+
+    Optional<Passageiro> p = passageiros.stream()
+            .filter(pass -> pass.nome.equalsIgnoreCase(nome))
+            .findFirst();
+
+    if (p.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Passageiro não cadastrado!");
+        return;
+    }
+
+    // Verifica se já tem reserva pendente ou confirmada
+    if (voo.reservasPendentes.contains(p.get()) || voo.confirmados.contains(p.get())) {
+        JOptionPane.showMessageDialog(this, "Você já possui uma reserva neste voo!");
+        return;
+    }
+
+    // Adiciona o passageiro à fila de pendentes
+    voo.reservasPendentes.add(p.get());
+    JOptionPane.showMessageDialog(this, "Reserva adicionada à lista de pendentes! Aguarde confirmação do administrador.");
+}
+
 
     private void checkIn() {
         String num = JOptionPane.showInputDialog("Digite o número do voo:");
-        if (num == null || num.isBlank()) return;
+        if (num == null || num.isBlank())
+            return;
         Voo voo = voos.stream().filter(v -> v.numeroVoo.equals(num)).findFirst().orElse(null);
-        if (voo == null) { JOptionPane.showMessageDialog(this, "Voo não encontrado!"); return; }
+        if (voo == null) {
+            JOptionPane.showMessageDialog(this, "Voo não encontrado!");
+            return;
+        }
 
         String nome = JOptionPane.showInputDialog("Digite seu nome (como cadastrado):");
-        if (nome == null || nome.isBlank()) return;
+        if (nome == null || nome.isBlank())
+            return;
         Optional<Passageiro> p = voo.confirmados.stream().filter(ps -> ps.nome.equalsIgnoreCase(nome)).findFirst();
         if (p.isPresent()) {
             voo.checkIn.push(p.get());
@@ -331,47 +362,61 @@ public class SistemaAeroportoGUI extends JFrame {
 
     private void exibirVoos() {
         StringBuilder sb = new StringBuilder("Voos cadastrados:\n");
-        for (Voo v : voos) sb.append(v.toString()).append("\n");
+        for (Voo v : voos)
+            sb.append(v.toString()).append("\n");
         JOptionPane.showMessageDialog(this, sb.toString());
     }
 
     // ====================== PROCESSAR RESERVAS ======================
     private void processarReservasAdmin() {
-        String num = JOptionPane.showInputDialog("Número do voo para processar:");
-        if (num == null || num.isBlank()) return;
+        if (voos.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nenhum voo cadastrado.");
+            return;
+        }
+
+        // Mostrar voos já cadastrados
+        StringBuilder sb = new StringBuilder("Voos cadastrados:\n");
+        for (Voo v : voos) {
+            sb.append(v.numeroVoo).append(" - ").append(v.origem).append(" → ").append(v.destino)
+                    .append(" | Confirmados: ").append(v.confirmados.size())
+                    .append(" | Pendentes: ").append(v.reservasPendentes.size()).append("\n");
+        }
+
+        String num = JOptionPane.showInputDialog(this, sb + "\nDigite o número do voo para processar:");
+        if (num == null || num.isBlank())
+            return;
+
         Voo voo = voos.stream().filter(v -> v.numeroVoo.equals(num)).findFirst().orElse(null);
-        if (voo == null) { JOptionPane.showMessageDialog(this, "Voo não encontrado!"); return; }
+        if (voo == null) {
+            JOptionPane.showMessageDialog(this, "Voo não encontrado!");
+            return;
+        }
 
-        while (!voo.reservasPendentes.isEmpty()) {
-            Passageiro p = voo.reservasPendentes.peek(); // não remove ainda
-            int opcao = JOptionPane.showOptionDialog(
-                    this,
-                    "Confirmar passageiro?\n" + p.toString() +
-                            "\nVagas disponíveis: " + (voo.capacidadeMaxima - voo.confirmados.size()),
-                    "Processar Reserva",
-                    JOptionPane.YES_NO_CANCEL_OPTION,
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    new String[]{"Confirmar", "Rejeitar", "Cancelar"},
-                    "Confirmar"
-            );
+        if (voo.reservasPendentes.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Não há reservas pendentes para este voo.");
+            return;
+        }
 
-            if (opcao == 0) { // Confirmar
-                if (voo.temVagas()) {
-                    voo.confirmados.add(p);
-                    voo.reservasPendentes.poll();
-                    JOptionPane.showMessageDialog(this, "Reserva confirmada!");
-                } else {
-                    JOptionPane.showMessageDialog(this, "Capacidade máxima atingida!");
-                    break;
-                }
-            } else if (opcao == 1) { // Rejeitar
-                voo.reservasPendentes.poll();
-                JOptionPane.showMessageDialog(this, "Reserva rejeitada.");
-            } else { // Cancelar
-                break;
+        // Processar reservas uma a uma, perguntando ao admin se deseja confirmar
+        Queue<Passageiro> tempPendentes = new LinkedList<>(voo.reservasPendentes);
+        voo.reservasPendentes.clear();
+
+        while (!tempPendentes.isEmpty() && voo.temVagas()) {
+            Passageiro p = tempPendentes.poll();
+            int resp = JOptionPane.showConfirmDialog(this,
+                    "Deseja confirmar a reserva de " + p.nome + " para o voo " + voo.numeroVoo + "?",
+                    "Confirmar Reserva",
+                    JOptionPane.YES_NO_OPTION);
+
+            if (resp == JOptionPane.YES_OPTION) {
+                voo.confirmados.add(p);
+                JOptionPane.showMessageDialog(this, "Reserva confirmada para " + p.nome);
+            } else {
+                // Se não confirmar, volta para a fila de pendentes
+                voo.reservasPendentes.add(p);
             }
         }
+
         JOptionPane.showMessageDialog(this, "Processamento concluído!");
     }
 
@@ -379,8 +424,10 @@ public class SistemaAeroportoGUI extends JFrame {
         StringBuilder sb = new StringBuilder("Histórico de Passageiros:\n");
         for (Voo v : voos) {
             sb.append("Voo ").append(v.numeroVoo).append(":\n");
-            if (v.confirmados.isEmpty()) sb.append("  Nenhum passageiro confirmado\n");
-            else v.confirmados.forEach(p -> sb.append("  ").append(p).append("\n"));
+            if (v.confirmados.isEmpty())
+                sb.append("  Nenhum passageiro confirmado\n");
+            else
+                v.confirmados.forEach(p -> sb.append("  ").append(p).append("\n"));
         }
         JOptionPane.showMessageDialog(this, sb.toString());
     }
